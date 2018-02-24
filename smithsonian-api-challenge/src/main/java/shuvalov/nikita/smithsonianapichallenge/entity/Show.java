@@ -2,6 +2,7 @@ package shuvalov.nikita.smithsonianapichallenge.entity;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.List;
 
 public class Show {
@@ -110,4 +111,36 @@ public class Show {
                 hours > 0 ? hours+"hrs " : "",
                 minutes > 0 ? minutes+"min" : "" );
     }
+
+
+    public final static class TitleComparator implements Comparator<Show>{
+        boolean reversed;
+
+        public TitleComparator(boolean reversed){
+            this.reversed = reversed;
+        }
+
+        @Override
+        public int compare(Show o1, Show o2) {
+            return reversed ?
+                    o1.getTitle().compareTo(o2.getTitle()):
+                    o2.getTitle().compareTo(o1.getTitle());
+        }
+    }
+
+    public final static class IdComparator implements Comparator<Show>{
+        boolean reversed;
+
+        public IdComparator(boolean reversed){
+            this.reversed = reversed;
+        }
+
+        @Override
+        public int compare(Show o1, Show o2) {
+            return reversed ?
+                    o2.getId() - o1.getId():
+                    o1.getId() - o2.getId();
+        }
+    }
+
 }

@@ -1,12 +1,16 @@
 package shuvalov.nikita.smithsonianapichallenge.database;
 
 import com.sun.istack.internal.Nullable;
+import shuvalov.nikita.smithsonianapichallenge.Search;
 import shuvalov.nikita.smithsonianapichallenge.entity.Show;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+
+import static shuvalov.nikita.smithsonianapichallenge.Search.SearchParam.TITLE;
 
 public class ShowDbHelper {
 
@@ -17,14 +21,14 @@ public class ShowDbHelper {
     private static final String SHOW_TABLE = "SHOW_TABLE";
     private static final String KEYWORD_TABLE = "KEYWORD_TABLE";
 
-    private static final String SHOW_ID_COLUMN = "SHOW_ID";
-    private static final String TITLE_COLUMN = "TITLE";
-    private static final String DESCRIP_COLUMN = "DESCRIPTION";
-    private static final String DURATION_COLUMN ="DURATION";
-    private static final String RATING_COLUMN = "RATING";
-    private static final String AIRDATE_COLUMN = "ORIGINAL_AIRDATE";
+    public static final String SHOW_ID_COLUMN = "SHOW_ID";
+    public static final String TITLE_COLUMN = "TITLE";
+    public static final String DESCRIP_COLUMN = "DESCRIPTION";
+    public static final String DURATION_COLUMN ="DURATION";
+    public static final String RATING_COLUMN = "RATING";
+    public static final String AIRDATE_COLUMN = "ORIGINAL_AIRDATE";
 
-    private static final String KEYWORD_TEXT_COLUMN = "KEYWORD_TEXT";
+    public static final String KEYWORD_TEXT_COLUMN = "KEYWORD_TEXT";
 
 
     private static final String CREATE_SHOW_TABLE_EXE = "CREATE TABLE " + SHOW_TABLE + " ("+
@@ -121,7 +125,9 @@ public class ShowDbHelper {
     }
 
     //=========================================== Get ========================================
-    public List<Show> getAllShows(){
+
+
+    public List<Show> getAllShows(boolean ascendingOrder){
         System.out.println("DBHelper Index Called");
         List<Show> allShows = new ArrayList<>();
         try {
@@ -129,7 +135,32 @@ public class ShowDbHelper {
                 startConnection();
             }
             Statement statement = mConnection.createStatement();
-            ResultSet cursor = statement.executeQuery("SELECT * FROM " + SHOW_TABLE);
+            ResultSet cursor = statement.executeQuery(String.format("SELECT * FROM %s %s", SHOW_TABLE, ascendingOrder ? "" : String.format("ORDER BY %s DESC", SHOW_ID_COLUMN)));
+            while(cursor.next()){
+                allShows.add(getShowFromQueryResult(cursor));
+            }
+            cursor.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return allShows;
+    }
+
+
+    public List<Show> getAllShows(Search search){
+        System.out.println("DBHelper Index Called");
+        List<Show> allShows = new ArrayList<>();
+        try {
+            if(mConnection == null){
+                startConnection();
+            }
+            Statement statement = mConnection.createStatement();
+            ResultSet cursor = statement.executeQuery(String.format("SELECT * FROM %s %s", SHOW_TABLE,
+                    String.format("ORDER BY %s %s",
+                            search.getOrderParam().getColumnName(),
+                            search.isAscendingOrder() ?
+                                    "ASC" :
+                                    "DESC")));
             while(cursor.next()){
                 allShows.add(getShowFromQueryResult(cursor));
             }
@@ -144,10 +175,16 @@ public class ShowDbHelper {
         try {
             Statement statement = mConnection.createStatement();
             ResultSet cursor = statement.executeQuery(String.format("SELECT * FROM %s WHERE %s = %s", SHOW_TABLE, SHOW_ID_COLUMN, id));
+            Show show = null;
             if(cursor.next()){
-                return getShowFromQueryResult(cursor);
+                show =getShowFromQueryResult(cursor);
+                if(!cursor.isLast()){
+                    throw new SQLException("Multiple Show Entries with same Id");
+                }
             }
-            return null;
+            cursor.close();
+            statement.close();
+            return show;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -172,43 +209,68 @@ public class ShowDbHelper {
         }
     }
 
-    public List<Show> getShowsByTitle(String title){
-        List<Show> showsWithTitle = new ArrayList<>();
+
+    public List<Show> getShowsBySearch(Search search) {
+        List<Show> showResultList = new ArrayList<>();
         try {
             Statement statement = mConnection.createStatement();
-            String queryString = String.format("SELECT * FROM %s WHERE %s ILIKE '%s'", SHOW_TABLE, TITLE_COLUMN, "%" + title + "%");
+            String queryString;
+            switch(search.getSearchParam()){
+                case TITLE:
+                    queryString = String.format("SELECT * FROM %s WHERE %s ILIKE '%s' ORDER BY %s %s", SHOW_TABLE, search.getSearchParam().getColumnName(), "%" + search.getSearchValue() + "%", search.getOrderParam().getColumnName(), search.isAscendingOrder() ? "ASC" : "DESC");
+                    break;
+                case KEYWORD:
+                    List<Show> showList = getShowsAssociatedWithKeyword(search.getSearchValue());
+                    sortShowList(showList, search);
+                    statement.close();
+                    return showList;
+                default:
+                    throw new Exception(String.format("Unhandled SearchParam ('%s') when assigning Table to search", search.getSearchParam().toString()));
+
+            }
             ResultSet cursor = statement.executeQuery(queryString);
             while(cursor.next()){
-                showsWithTitle.add(getShowFromQueryResult(cursor));
+                showResultList.add(getShowFromQueryResult(cursor));
             }
             cursor.close();
             statement.close();
-            return showsWithTitle;
-        } catch (SQLException e) {
+            return showResultList;
+        } catch(Exception e){
             e.printStackTrace();
         }
         return null;
     }
 
-    public List<Show> getShowsByKeyword(String keyword){
-        List<Show> showsWithKeyword = new ArrayList<>();
+    private void sortShowList(List<Show> showList, Search search){
+        switch(search.getOrderParam()){
+            case ID:
+                if(!search.isAscendingOrder()){
+                    showList.sort(new Show.IdComparator(true));
+                }
+                break; //By default the result list should be ascending by ID, nothing needs to be done
+            case TITLE:
+                showList.sort(new Show.TitleComparator(search.isAscendingOrder()));
+                break;
+        }
+    }
+
+    private List<Show> getShowsAssociatedWithKeyword(String keyword){
+        List<Show> showIdList = new ArrayList<>();
         try{
             Statement statement = mConnection.createStatement();
             String queryString = String.format("SELECT %s FROM %s WHERE %s ILIKE '%s'", SHOW_ID_COLUMN, KEYWORD_TABLE, KEYWORD_TEXT_COLUMN, "%" + keyword + "%");
             ResultSet cursor = statement.executeQuery(queryString);
             while(cursor.next()){
-                showsWithKeyword.add(getShowById(cursor.getInt(cursor.findColumn(SHOW_ID_COLUMN))));
+                showIdList.add(getShowById(cursor.getInt(cursor.findColumn(SHOW_ID_COLUMN))));
             }
             cursor.close();
             statement.close();
-            return showsWithKeyword;
+            return showIdList;
         }catch(SQLException e){
             e.printStackTrace();
             return null;
         }
     }
-
-
 
     //====================================== Add/Post ==================================================
 

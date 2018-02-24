@@ -1,14 +1,13 @@
 package shuvalov.nikita.smithsonianapichallenge.controller;
 
-import com.sun.istack.internal.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import shuvalov.nikita.smithsonianapichallenge.Search;
 import shuvalov.nikita.smithsonianapichallenge.database.ShowDbHelper;
 import shuvalov.nikita.smithsonianapichallenge.entity.Show;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
@@ -17,30 +16,75 @@ import java.util.List;
 public class ShowController {
 
     //===================================== Shows ===================================================================
+
+    /**
+     *
+     *
+     * @param title Search for shows with text in Title
+     * @param keyword Search for shows with Keyword attached
+     * @param page Page of search
+     * @param sortByTitle Use "asc" for ascending, "desc" for descending by title
+     * @param sortById "desc" for descending by id. Defaults to ascending by nature
+     * @return
+     */
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<?> getShowByParams(@RequestParam(value = "title", required =  false) String title,
-                                                @RequestParam(value = "keyword", required = false) String keyword){
+                                                @RequestParam(value = "keyword", required = false) String keyword,
+                                             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                             @RequestParam(value = "sort_by_title", required = false) String sortByTitle,
+                                             @RequestParam(value = "sort_by_id", required = false) String sortById){
+        Search.Builder searchBuilder = new Search.Builder();
         if((title == null || title.isEmpty()) &&
                 (keyword == null || keyword.isEmpty())) {
-            return new ResponseEntity(HttpStatus.NO_CONTENT);
+            attachOrderingParamsToSearchBuilder(searchBuilder,sortByTitle, sortById);
+            List<Show> orderedShows = ShowDbHelper.getInstance().getAllShows(searchBuilder.build());
+            return orderedShows == null ?
+                    new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
+                    new ResponseEntity<>(orderedShows, HttpStatus.OK);
         }
 
-        ShowDbHelper showDbHelper = ShowDbHelper.getInstance();
         if(title != null && !title.isEmpty()){
-            List<Show> showsWithTitle = showDbHelper.getShowsByTitle(title);
-            return showsWithTitle == null ?
-                    new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
-                    new ResponseEntity<>(showsWithTitle, HttpStatus.OK);
-        }else{
-            List<Show> showsWithKeyword = showDbHelper.getShowsByKeyword(keyword);
-            return showsWithKeyword == null ?
-                    new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
-                    new ResponseEntity<>(showsWithKeyword, HttpStatus.OK);
+            searchBuilder.setSearchParam(Search.SearchParam.TITLE).setSearchValue(title);
+            attachOrderingParamsToSearchBuilder(searchBuilder, sortByTitle, sortById);
+        }else {//Otherwise Keyword isn't empty or null; we search by it
+            searchBuilder.setSearchParam(Search.SearchParam.KEYWORD).setSearchValue(keyword);
+            attachOrderingParamsToSearchBuilder(searchBuilder, sortByTitle, sortById);
+        }
+        Search search = searchBuilder.build();
+        List<Show> searchResultList = getResultsFromSearch(search);
+
+        return searchResultList == null ?
+                new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
+                new ResponseEntity<>(searchResultList, HttpStatus.OK);
+
+    }
+
+    private void attachOrderingParamsToSearchBuilder(Search.Builder searchBuilder, String sortByTitle, String sortById){
+        if(sortByTitle != null){
+            searchBuilder.setOrderParam(Search.OrderParam.TITLE);
+            if(sortByTitle.toLowerCase().equals("desc")){
+                searchBuilder.setAscendingOrder(false);
+            }else if(sortByTitle.toLowerCase().equals("asc")){
+                searchBuilder.setAscendingOrder(true);
+            }
+        }else if (sortById != null){
+            searchBuilder.setOrderParam(Search.OrderParam.ID);
+            if(sortById.toLowerCase().equals("desc")){
+                searchBuilder.setAscendingOrder(false);
+            }else if(sortById.toLowerCase().equals("asc")){
+                searchBuilder.setAscendingOrder(true);
+            }
         }
     }
+
+    private List<Show> getResultsFromSearch(Search search){
+        return ShowDbHelper.getInstance().getShowsBySearch(search);
+    }
+
+
     @RequestMapping(path = "/", method = RequestMethod.GET)
     public Collection<Show> getIndex(){
-        return ShowDbHelper.getInstance().getAllShows();
+        return ShowDbHelper.getInstance().getAllShows(true);
     }
 
     @RequestMapping(path = "/{id}", method = RequestMethod.GET)
