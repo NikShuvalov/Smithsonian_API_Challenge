@@ -105,7 +105,7 @@ public class ShowDbHelper {
     }
 
     //=================================== Util ==========================================================
-    private Show getShowFromQueryResults(ResultSet cursor) throws SQLException{
+    private Show getShowFromQueryResult(ResultSet cursor) throws SQLException{
         int id = cursor.getInt(cursor.findColumn(SHOW_ID_COLUMN));
         String title = cursor.getString(cursor.findColumn(TITLE_COLUMN));
         String descrip = cursor.getString(cursor.findColumn(DESCRIP_COLUMN));
@@ -120,6 +120,38 @@ public class ShowDbHelper {
     }
 
     //=========================================== Get ========================================
+    public List<Show> getAllShows(){
+        System.out.println("DBHelper Index Called");
+        List<Show> allShows = new ArrayList<>();
+        try {
+            if(mConnection == null){
+                startConnection();
+            }
+            Statement statement = mConnection.createStatement();
+            ResultSet cursor = statement.executeQuery("SELECT * FROM " + SHOW_TABLE);
+            while(cursor.next()){
+                allShows.add(getShowFromQueryResult(cursor));
+            }
+            cursor.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return allShows;
+    }
+
+    public Show getShowById(int id){
+        try {
+            Statement statement = mConnection.createStatement();
+            ResultSet cursor = statement.executeQuery(String.format("SELECT * FROM %s WHERE %s = %s", SHOW_TABLE, SHOW_ID_COLUMN, id));
+            if(cursor.next()){
+                return getShowFromQueryResult(cursor);
+            }
+            return null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     private List<String> getAssociatedKeywords(int showId) throws SQLException {
         List<String> keywordKeys = new ArrayList<>();
@@ -134,38 +166,24 @@ public class ShowDbHelper {
         return keywordKeys;
     }
 
-    public Collection<Show> getAllShows(){
-        System.out.println("DBHelper Index Called");
-        Collection<Show> allShows = new ArrayList<>();
+    public List<Show> getShowsByTitle(String title){
+        List<Show> showsWithTitle = new ArrayList<>();
         try {
-            if(mConnection == null){
-                startConnection();
-            }
             Statement statement = mConnection.createStatement();
-            ResultSet cursor = statement.executeQuery("SELECT * FROM " + SHOW_TABLE);
+            String queryString = String.format("SELECT * FROM %s WHERE %s ILIKE '%s'", SHOW_TABLE, TITLE_COLUMN, "%" + title + "%");
+            ResultSet cursor = statement.executeQuery(queryString);
             while(cursor.next()){
-                allShows.add(getShowFromQueryResults(cursor));
+                showsWithTitle.add(getShowFromQueryResult(cursor));
             }
             cursor.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return allShows;
-    }
-
-    public Show getShowById(int id){
-        try {
-            Statement statement = mConnection.createStatement();
-            ResultSet cursor = statement.executeQuery(String.format("SELECT * FROM %s WHERE %s = %s", SHOW_TABLE, SHOW_ID_COLUMN, id));
-            if(cursor.next()){
-                return getShowFromQueryResults(cursor);
-            }
-            return null;
+            statement.close();
+            return showsWithTitle;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
+
 
     //====================================== Add/Post ==================================================
 
@@ -178,6 +196,7 @@ public class ShowDbHelper {
         insertKeywords(statement, show.getKeywords(), show.getId());
     }
 
+    //ToDo: Allow user to add keywords to shows
     public void addKeywordAssociation(Statement statement, String keyword, int showId) throws SQLException{
         statement.execute(String.format("INSERT INTO %s VALUES (%s, '%s')", KEYWORD_TABLE, showId, keyword));
     }
@@ -225,6 +244,7 @@ public class ShowDbHelper {
         statement.execute(executionString);
     }
 
+    //ToDo: Allow user to remove keywords from shows
     private void removeKeywordAssociation(Statement statement, int showId, String keyword) throws SQLException{
         String executionString = String.format("DELETE FROM %s WHERE %s = %s AND %s = %s", KEYWORD_TABLE,
                 SHOW_ID_COLUMN, showId,
@@ -253,5 +273,5 @@ public class ShowDbHelper {
         }
     }
 
-
+    //ToDo: Sync Keywords upon show update
 }

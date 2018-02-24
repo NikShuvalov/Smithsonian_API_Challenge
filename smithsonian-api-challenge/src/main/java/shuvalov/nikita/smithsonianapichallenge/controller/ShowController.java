@@ -1,5 +1,6 @@
 package shuvalov.nikita.smithsonianapichallenge.controller;
 
+import com.sun.istack.internal.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -8,10 +9,32 @@ import shuvalov.nikita.smithsonianapichallenge.database.ShowDbHelper;
 import shuvalov.nikita.smithsonianapichallenge.entity.Show;
 
 import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequestMapping("/shows")
 public class ShowController {
+
+    @RequestMapping(method = RequestMethod.GET)
+    public ResponseEntity<?> getShowByParams(@RequestParam(value = "title", required =  false) String title,
+                                                @RequestParam(value = "keyword", required = false) String rating){
+        if((title == null || title.isEmpty()) &&
+                (rating == null || rating.isEmpty())) {
+            return new ResponseEntity(HttpStatus.NO_CONTENT);
+        }
+
+        ShowDbHelper showDbHelper = ShowDbHelper.getInstance();
+        if(title != null && !title.isEmpty()){
+            List<Show> showsWithTitle = showDbHelper.getShowsByTitle(title);
+            return showsWithTitle == null ?
+                    new ResponseEntity(HttpStatus.NO_CONTENT) :
+                    new ResponseEntity<>(showsWithTitle, HttpStatus.OK);
+        }else{
+//            List<Show> showsWithKeyword;
+            //ToDo: Find byKeyword
+            return null;
+        }
+    }
 
     @RequestMapping(path = "/", method = RequestMethod.GET)
     public Collection<Show> getIndex(){
@@ -26,6 +49,7 @@ public class ShowController {
                 new ResponseEntity<>(HttpStatus.NOT_FOUND) :
                 new ResponseEntity<>(show, HttpStatus.OK);
     }
+
 
     @RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity addNewShow(@RequestBody Show show){
@@ -48,13 +72,11 @@ public class ShowController {
         return ShowDbHelper.getInstance().updateShowById(id, updatedShow) ?
                 new ResponseEntity(HttpStatus.ACCEPTED) :
                 new ResponseEntity(HttpStatus.BAD_REQUEST);
-
-
     }
 
-    @RequestMapping(method = RequestMethod.GET)
-    public void redirectToIndex(){
-        //ToDo: Redirect
-    }
+//    @RequestMapping(method = RequestMethod.GET)
+//    public void redirectToIndex(){
+//        //ToDo: Redirect
+//    }
 
 }
