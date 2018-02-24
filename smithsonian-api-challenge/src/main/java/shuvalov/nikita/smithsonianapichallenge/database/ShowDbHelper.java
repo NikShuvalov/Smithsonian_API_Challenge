@@ -120,20 +120,6 @@ public class ShowDbHelper {
     }
 
     //=========================================== "Getters" ========================================
-    private void insertShowIntoDatabase(Statement statement, Show show) throws SQLException {
-        String executionString = String.format("INSERT INTO %s VALUES (%s, '%s', '%s', %s, %s, %s)",
-                SHOW_TABLE,
-                show.getId(), show.getTitle(), show.getDescription(), show.getDuration(), show.getOriginalAirDate(), show.getRating()
-        );
-        statement.execute(executionString);
-        insertKeywords(statement, show.getKeywords(), show.getId());
-    }
-
-    private void insertKeywords(Statement statement, List<String> keywords, int showId) throws SQLException {
-        for(String keyword : keywords){
-            statement.execute(String.format("INSERT INTO %s VALUES (%s, '%s')", KEYWORD_TABLE, showId, keyword));
-        }
-    }
 
     private List<String> getAssociatedKeywords(int showId) throws SQLException {
         List<String> keywordKeys = new ArrayList<>();
@@ -181,5 +167,33 @@ public class ShowDbHelper {
         return null;
     }
 
+    //====================================== "Setters" ==================================================
+
+    private void insertShowIntoDatabase(Statement statement, Show show) throws SQLException {
+        String executionString = String.format("INSERT INTO %s VALUES (%s, '%s', '%s', %s, %s, %s)",
+                SHOW_TABLE,
+                show.getId(), show.getTitle(), show.getDescription(), show.getDuration(), show.getOriginalAirDate(), show.getRating()
+        );
+        statement.execute(executionString);
+        insertKeywords(statement, show.getKeywords(), show.getId());
+    }
+
+    private void insertKeywords(Statement statement, List<String> keywords, int showId) throws SQLException {
+        for(String keyword : keywords){
+            statement.execute(String.format("INSERT INTO %s VALUES (%s, '%s')", KEYWORD_TABLE, showId, keyword));
+        }
+    }
+
+    public boolean addShow(Show show){
+        try {
+            Statement statement = mConnection.createStatement();
+            insertShowIntoDatabase(statement, show);
+            statement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return  false;
+        }
+        return true;
+    }
 
 }

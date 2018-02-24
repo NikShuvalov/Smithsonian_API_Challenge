@@ -1,9 +1,9 @@
 package shuvalov.nikita.smithsonianapichallenge.controller;
 
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import shuvalov.nikita.smithsonianapichallenge.database.ShowDbHelper;
 import shuvalov.nikita.smithsonianapichallenge.entity.Show;
 
@@ -20,9 +20,23 @@ public class ShowController {
 
     //ToDo: do "?id={id} instead, maybe perhaps?
     @RequestMapping(path = "/{id}", method = RequestMethod.GET)
-    public Show test(@PathVariable int id){
-        return ShowDbHelper.getInstance().getShowById(id);
+    public ResponseEntity<Show> getShowById(@PathVariable(value = "id") int id){
+        Show show = ShowDbHelper.getInstance().getShowById(id);
+        return show == null ?
+                new ResponseEntity<>(HttpStatus.NOT_FOUND) :
+                new ResponseEntity<>(show, HttpStatus.OK);
     }
+
+    @RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity addNewShow(@RequestBody Show show){
+        return ShowDbHelper.getInstance().addShow(show) ?
+                new ResponseEntity(HttpStatus.ACCEPTED) :
+                new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    //Add
+    //Update
+    //Delete
 
 
     @RequestMapping(method = RequestMethod.GET)
