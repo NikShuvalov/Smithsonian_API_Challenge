@@ -1,13 +1,12 @@
 package shuvalov.nikita.smithsonianapichallenge.entity;
 
-import javax.persistence.Id;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
 public class Show {
 
-    @Id
-    private Long mId;
+    private int mId;
 
     private String mTitle, mDescription;
     private long mDuration; //Duration in millis?
@@ -15,7 +14,11 @@ public class Show {
     private float mRating;
     private List<String> mKeywords;
 
-    public Show(Long id, String title, String description, long durationInMillis, long originalAirDateInMillis, float rating, List<String> keywords) {
+    public Show(int id, String title, String description, long duration, long originalAirDate, float rating) {
+        this(id, title, description,duration,originalAirDate,rating, new ArrayList<>());
+    }
+
+    public Show(int id, String title, String description, long durationInMillis, long originalAirDateInMillis, float rating, List<String> keywords) {
         mId = id;
         mTitle = title;
         mDescription = description;
@@ -25,11 +28,11 @@ public class Show {
         mOriginalAirDate = originalAirDateInMillis;
     }
 
-    public Long getId() {
+    public int getId() {
         return mId;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         mId = id;
     }
 
@@ -83,6 +86,10 @@ public class Show {
 
     public long getDuration() {
         return mDuration;
+    }
+
+    public String getReadableDuration(){
+        return getDurationStringFromMillis(mDuration);
     }
 
     private String getDateFromMillis(long timeInMillis){
