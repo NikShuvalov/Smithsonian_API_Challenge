@@ -17,8 +17,11 @@ public class ShowController {
         return ShowDbHelper.getInstance().getAllShows();
     }
 
-    @RequestMapping(path = "/test", method = RequestMethod.GET)
+    @RequestMapping(path = "/{id}", method = RequestMethod.GET)
     public String test(){
+        //ToDo: Get Show By Id
         return "You can do it";
     }
+
+
 }
