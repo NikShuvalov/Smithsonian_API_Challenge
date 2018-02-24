@@ -1,5 +1,6 @@
 package shuvalov.nikita.smithsonianapichallenge.database;
 
+import com.sun.istack.internal.Nullable;
 import shuvalov.nikita.smithsonianapichallenge.entity.Show;
 
 import java.sql.*;
@@ -94,12 +95,12 @@ public class ShowDbHelper {
 
     public static ShowDbHelper getInstance() {
         instantiate();
-        System.out.println("Database begun");
         return sShowDbHelper;
     }
 
     public static void instantiate(){
         if(sShowDbHelper == null){
+            System.out.println("Database begun");
             sShowDbHelper = new ShowDbHelper();
         }
     }
@@ -171,8 +172,6 @@ public class ShowDbHelper {
         }
     }
 
-
-
     public List<Show> getShowsByTitle(String title){
         List<Show> showsWithTitle = new ArrayList<>();
         try {
@@ -222,12 +221,23 @@ public class ShowDbHelper {
         insertKeywords(statement, show.getKeywords(), show.getId());
     }
 
-    //ToDo: Allow user to add keywords to shows
-    public void addKeywordAssociation(Statement statement, String keyword, int showId) throws SQLException{
-        statement.execute(String.format("INSERT INTO %s VALUES (%s, '%s')", KEYWORD_TABLE, showId, keyword));
+    //FixMe: Does not handle duplicate entries
+    public boolean addKeywordAssociation(@Nullable Statement statement, String keyword, int showId){
+        boolean rememberToClose = (statement == null);
+        try {
+            if (rememberToClose) statement = mConnection.createStatement();
+
+            statement.execute(String.format("INSERT INTO %s VALUES (%s, '%s')", KEYWORD_TABLE, showId, keyword));
+
+            if (rememberToClose) statement.close();
+            return true;
+        }catch (SQLException e){
+            e.printStackTrace();
+            return false;
+        }
     }
 
-    private void insertKeywords(Statement statement, List<String> keywords, int showId) throws SQLException {
+    private void insertKeywords(Statement statement, List<String> keywords, int showId){
         for(String keyword : keywords){
             addKeywordAssociation(statement, keyword, showId);
         }
@@ -265,18 +275,55 @@ public class ShowDbHelper {
         statement.execute(executionString);
     }
 
+    /**
+     * Removes ALL keyword associations linked to a show in the Keyword table.
+     * It's called when a show is deleted.
+     *
+     * @param statement
+     * @param showId
+     * @throws SQLException
+     */
     private void deleteKeywordAssociations(Statement statement, int showId) throws SQLException{
         String executionString = String.format("DELETE FROM %s WHERE %s = %s", KEYWORD_TABLE, SHOW_ID_COLUMN, showId);
         statement.execute(executionString);
     }
 
-    //ToDo: Allow user to remove keywords from shows
+    /**
+     * Removes ONE keyword that's associated with a show.
+     *
+     * @param statement
+     * @param showId
+     * @param keyword
+     * @throws SQLException
+     */
     private void removeKeywordAssociation(Statement statement, int showId, String keyword) throws SQLException{
-        String executionString = String.format("DELETE FROM %s WHERE %s = %s AND %s = %s", KEYWORD_TABLE,
+        String executionString = String.format("DELETE FROM %s WHERE %s = %s AND %s = '%s'", KEYWORD_TABLE,
                 SHOW_ID_COLUMN, showId,
                 KEYWORD_TEXT_COLUMN, keyword);
         statement.execute(executionString);
     }
+
+    /**
+     * Removes the passed keywords from the show.
+     *
+     * @param showId
+     * @param keywords
+     * @return true if all keywords removed, false if error
+     */
+    public boolean removeKeywordsFromShow(int showId, List<String> keywords){
+        try {
+            Statement statement = mConnection.createStatement();
+            for(String keyword: keywords){
+                removeKeywordAssociation(statement, showId, keyword);
+            }
+            statement.close();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
     //============================================ Update ========================================================
 
@@ -299,5 +346,4 @@ public class ShowDbHelper {
         }
     }
 
-    //ToDo: Sync Keywords upon show update
 }

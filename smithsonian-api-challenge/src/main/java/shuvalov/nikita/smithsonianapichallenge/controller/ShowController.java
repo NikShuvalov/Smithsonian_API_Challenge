@@ -76,6 +76,11 @@ public class ShowController {
 
     //======================================= Keywords ==============================================================
 
+    /**
+     * Gets a list of all keywords associated with a show.
+     * @param id Show's id
+     * @return Keyword List and OK response if successful otherwise INTERNAL_SERVER_ERROR
+     */
     @RequestMapping(path = "/{id}/keywords", method = RequestMethod.GET)
     public ResponseEntity<?> getKeywordsAssociatedWithShow(@PathVariable(value = "id") int id){
         List<String> keywords = ShowDbHelper.getInstance().getAssociatedKeywords(id);
@@ -84,5 +89,36 @@ public class ShowController {
                 new ResponseEntity<>(keywords, HttpStatus.OK);
     }
 
-//    @RequestMapping(path = "")
+
+    /**
+     * This route accepts a JSONArray of strings to append to the show of the ID given. Currently does not handle duplicate Keywords.
+     * @param id Show's id
+     * @param keywords Keywords to be added
+     * @return BAD_REQUEST if error occurs, otherwise ACCEPTED
+     */
+    @RequestMapping(path = "/{id}/keywords", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity addKeywordsToShow(@PathVariable(value = "id") int id, @RequestBody List<String> keywords){
+        ShowDbHelper showDbHelper = ShowDbHelper.getInstance();
+        boolean error = false;
+        for(String keyword : keywords){
+            if(!showDbHelper.addKeywordAssociation(null, keyword, id)) {
+                error = true;
+            }
+        }
+        return error ? new ResponseEntity(HttpStatus.BAD_REQUEST) : new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+
+    /**
+     * This route accepts a JSONArray for strings of keywords to remove from the showid given.
+     *
+     * @param id
+     * @param keywords
+     * @return Accepted if success, otherwise InternalServerError
+     */
+    @RequestMapping(path = "/{id}/keywords", method = RequestMethod.DELETE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity removeKeywordsFromShow(@PathVariable(value = "id") int id, @RequestBody List<String> keywords){
+        return ShowDbHelper.getInstance().removeKeywordsFromShow(id, keywords) ?
+                new ResponseEntity(HttpStatus.ACCEPTED) :
+                new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }
