@@ -1,5 +1,6 @@
 package shuvalov.nikita.smithsonianapichallenge.controller;
 
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,10 +18,10 @@ public class ShowController {
         return ShowDbHelper.getInstance().getAllShows();
     }
 
+    //ToDo: do "?id={id} instead, maybe perhaps?
     @RequestMapping(path = "/{id}", method = RequestMethod.GET)
-    public String test(){
-        //ToDo: Get Show By Id
-        return "You can do it";
+    public Show test(@PathVariable int id){
+        return ShowDbHelper.getInstance().getShowById(id);
     }
 
 
@@ -28,6 +29,5 @@ public class ShowController {
     public void redirectToIndex(){
         //ToDo: Redirect
     }
-
 
 }

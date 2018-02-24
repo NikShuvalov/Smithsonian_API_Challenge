@@ -10,22 +10,20 @@ import java.util.List;
 public class ShowDbHelper {
 
     //=============================================== Constants ===============================================
-    public static final String DATABASE_URI= "jdbc:h2:mem:dummydb";
-    public static final String ADMIN_LOGIN = "sa";
+    private static final String DATABASE_URI= "jdbc:h2:mem:dummydb";
+    private static final String ADMIN_LOGIN = "sa";
 
-    public static final String SHOW_TABLE = "SHOW_TABLE";
-    public static final String KEYWORD_TABLE = "KEYWORD_TABLE";
-    public static final String SHOW_KEY_JOIN = "SHOW_KEYWORD_JOIN";
+    private static final String SHOW_TABLE = "SHOW_TABLE";
+    private static final String KEYWORD_TABLE = "KEYWORD_TABLE";
 
-    public static final String SHOW_ID_COLUMN = "SHOW_ID";
-    public static final String TITLE_COLUMN = "TITLE";
-    public static final String DESCRIP_COLUMN = "DESCRIPTION";
-    public static final String DURATION_COLUMN ="DURATION";
-    public static final String RATING_COLUMN = "RATING";
-    public static final String AIRDATE_COLUMN = "ORIGINAL_AIRDATE";
+    private static final String SHOW_ID_COLUMN = "SHOW_ID";
+    private static final String TITLE_COLUMN = "TITLE";
+    private static final String DESCRIP_COLUMN = "DESCRIPTION";
+    private static final String DURATION_COLUMN ="DURATION";
+    private static final String RATING_COLUMN = "RATING";
+    private static final String AIRDATE_COLUMN = "ORIGINAL_AIRDATE";
 
-    public static final String KEYWORD_ID_COLUMN = "KEYWORD_ID";
-    public static final String KEYWORD_TEXT_COLUMN = "KEYWORD_TEXT";
+    private static final String KEYWORD_TEXT_COLUMN = "KEYWORD_TEXT";
 
 
     private static final String CREATE_SHOW_TABLE_EXE = "CREATE TABLE " + SHOW_TABLE + " ("+
@@ -77,12 +75,11 @@ public class ShowDbHelper {
             genericKeywords.add("Cerebral");
             genericKeywords.add("Funny");
             genericKeywords.add("Provocative");
-            System.out.println("INSERTION RUNS");
             insertShowIntoDatabase(statement, new Show(0, "The Big Bang Theory", "Nerds do physics while some hot girl annoys them", 60000 * 30, 0, 8.3f, genericKeywords));
             insertShowIntoDatabase(statement, new Show(1, "Aerial America", "Take a virtual tour of America as seen from an airplane", 60000 * 30, 0, 8.7f, genericKeywords));
             insertShowIntoDatabase(statement, new Show(2, "Filler", "A description is worth a 1000 words", 60000 * 30, 0, 8.7f, genericKeywords));
             insertShowIntoDatabase(statement, new Show(3, "Additional Filler", "Descriptive text 2: Electric boogaloo", 60000 * 30, 0, 8.7f, genericKeywords));
-
+            System.out.println("Seeded database");
             statement.close();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -122,7 +119,6 @@ public class ShowDbHelper {
         return show;
     }
 
-
     //=========================================== "Getters" ========================================
     private void insertShowIntoDatabase(Statement statement, Show show) throws SQLException {
         String executionString = String.format("INSERT INTO %s VALUES (%s, '%s', '%s', %s, %s, %s)",
@@ -139,7 +135,6 @@ public class ShowDbHelper {
         }
     }
 
-
     private List<String> getAssociatedKeywords(int showId) throws SQLException {
         List<String> keywordKeys = new ArrayList<>();
         Statement statement = mConnection.createStatement();
@@ -153,9 +148,8 @@ public class ShowDbHelper {
         return keywordKeys;
     }
 
-
     public Collection<Show> getAllShows(){
-        System.out.println("DBHelper AllShows Called");
+        System.out.println("DBHelper Index Called");
         Collection<Show> allShows = new ArrayList<>();
         try {
             if(mConnection == null){
@@ -171,6 +165,20 @@ public class ShowDbHelper {
             e.printStackTrace();
         }
         return allShows;
+    }
+
+    public Show getShowById(int id){
+        try {
+            Statement statement = mConnection.createStatement();
+            ResultSet cursor = statement.executeQuery(String.format("SELECT * FROM %s WHERE %s = %s", SHOW_TABLE, SHOW_ID_COLUMN, id));
+            if(cursor.next()){
+                return getShowFromQueryResults(cursor);
+            }
+            return null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 
