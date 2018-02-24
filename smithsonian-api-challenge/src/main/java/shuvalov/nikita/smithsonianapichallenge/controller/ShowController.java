@@ -43,9 +43,14 @@ public class ShowController {
                 ;
     }
 
+    @RequestMapping(path = "/{id}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity updateShowById(@PathVariable(value ="id") int id, @RequestBody Show updatedShow){
+        return ShowDbHelper.getInstance().updateShowById(id, updatedShow) ?
+                new ResponseEntity(HttpStatus.ACCEPTED) :
+                new ResponseEntity(HttpStatus.BAD_REQUEST);
 
-    //Update
 
+    }
 
     @RequestMapping(method = RequestMethod.GET)
     public void redirectToIndex(){

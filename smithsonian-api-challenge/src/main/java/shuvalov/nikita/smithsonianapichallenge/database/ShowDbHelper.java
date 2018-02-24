@@ -119,7 +119,7 @@ public class ShowDbHelper {
         return show;
     }
 
-    //=========================================== "Getters" ========================================
+    //=========================================== Get ========================================
 
     private List<String> getAssociatedKeywords(int showId) throws SQLException {
         List<String> keywordKeys = new ArrayList<>();
@@ -167,7 +167,7 @@ public class ShowDbHelper {
         return null;
     }
 
-    //====================================== "Setters" ==================================================
+    //====================================== Add/Post ==================================================
 
     private void insertShowIntoDatabase(Statement statement, Show show) throws SQLException {
         String executionString = String.format("INSERT INTO %s VALUES (%s, '%s', '%s', %s, %s, %s)",
@@ -178,9 +178,13 @@ public class ShowDbHelper {
         insertKeywords(statement, show.getKeywords(), show.getId());
     }
 
+    public void addKeywordAssociation(Statement statement, String keyword, int showId) throws SQLException{
+        statement.execute(String.format("INSERT INTO %s VALUES (%s, '%s')", KEYWORD_TABLE, showId, keyword));
+    }
+
     private void insertKeywords(Statement statement, List<String> keywords, int showId) throws SQLException {
         for(String keyword : keywords){
-            statement.execute(String.format("INSERT INTO %s VALUES (%s, '%s')", KEYWORD_TABLE, showId, keyword));
+            addKeywordAssociation(statement, keyword, showId);
         }
     }
 
@@ -203,6 +207,7 @@ public class ShowDbHelper {
             Statement statement = mConnection.createStatement();
             deleteShow(statement, showId);
             deleteKeywordAssociations(statement, showId);
+            statement.close();
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -219,4 +224,34 @@ public class ShowDbHelper {
         String executionString = String.format("DELETE FROM %s WHERE %s = %s", KEYWORD_TABLE, SHOW_ID_COLUMN, showId);
         statement.execute(executionString);
     }
+
+    private void removeKeywordAssociation(Statement statement, int showId, String keyword) throws SQLException{
+        String executionString = String.format("DELETE FROM %s WHERE %s = %s AND %s = %s", KEYWORD_TABLE,
+                SHOW_ID_COLUMN, showId,
+                KEYWORD_TEXT_COLUMN, keyword);
+        statement.execute(executionString);
+    }
+
+    //============================================ Update ========================================================
+
+    public boolean updateShowById(int showId, Show updatedShow){
+        try {
+            Statement statement = mConnection.createStatement();
+            String executionString = String.format("UPDATE %s SET %s = '%s', %s = '%s', %s = %s, %s = %s, %s = %s WHERE %s = %s", SHOW_TABLE,
+                    TITLE_COLUMN, updatedShow.getTitle(),
+                    DESCRIP_COLUMN, updatedShow.getDescription(),
+                    DURATION_COLUMN, updatedShow.getDuration(),
+                    AIRDATE_COLUMN, updatedShow.getOriginalAirDate(),
+                    RATING_COLUMN, updatedShow.getRating(),
+                    SHOW_ID_COLUMN, showId);
+            statement.execute(executionString);
+            statement.close();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
 }
