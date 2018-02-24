@@ -39,13 +39,8 @@ public class ShowDbHelper {
 
 
     private static final String CREATE_KEYWORD_TABLE_EXE = "CREATE TABLE " + KEYWORD_TABLE + " (" +
-            KEYWORD_ID_COLUMN + " INTEGER PRIMARY KEY, " +
+            SHOW_ID_COLUMN + " INTEGER, " +
             KEYWORD_TEXT_COLUMN + " TEXT)";
-
-    private static final String KEYWORD_SHOW_JOIN_EXE = "CREATE TABLE " + SHOW_KEY_JOIN + " (" +
-            KEYWORD_ID_COLUMN + " INTEGER, " +
-            SHOW_ID_COLUMN + " INTEGER)";
-
 
     //========================================= Init =========================================
     private static ShowDbHelper sShowDbHelper;
@@ -64,7 +59,6 @@ public class ShowDbHelper {
             Statement statement = mConnection.createStatement();
             statement.execute(CREATE_SHOW_TABLE_EXE);
             statement.execute(CREATE_KEYWORD_TABLE_EXE);
-            statement.execute(KEYWORD_SHOW_JOIN_EXE);
             statement.close();
         }catch(SQLException e){
             e.printStackTrace();
@@ -123,43 +117,9 @@ public class ShowDbHelper {
         float rating = cursor.getFloat(cursor.findColumn(RATING_COLUMN));
 
         Show show = new Show(id, title, descrip, duration, airDate, rating);
-        List<Integer> keywordKeys = getAssociatedKeywordIds(id);
-        if(!keywordKeys.isEmpty()){
-            List<String> keywords = getKeywords(keywordKeys);
-            show.setKeywords(keywords);
-        }
+        List<String> keywordKeys = getAssociatedKeywords(id);
+        show.setKeywords(keywordKeys);
         return show;
-    }
-
-    private List<Integer> getAssociatedKeywordIds(int showId) throws SQLException {
-        List<Integer> keywordKeys = new ArrayList<>();
-        Statement statement = mConnection.createStatement();
-        String executionString = String.format(" SELECT %s FROM  %s WHERE %s = %s", KEYWORD_ID_COLUMN, SHOW_KEY_JOIN, SHOW_ID_COLUMN, showId);
-        ResultSet cursor = statement.executeQuery(executionString);
-        while(cursor.next()) {
-            keywordKeys.add(cursor.getInt(cursor.findColumn(KEYWORD_ID_COLUMN)));
-        }
-        cursor.close();
-        statement.close();
-        return keywordKeys;
-    }
-
-    private List<String> getKeywords(List<Integer> keywordsIds) throws SQLException {
-        List<String> keywords = new ArrayList<>();
-        Statement  statement = mConnection.createStatement();
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("SELECT %s FROM %s WHERE %s IN (", KEYWORD_TEXT_COLUMN, KEYWORD_TABLE, KEYWORD_ID_COLUMN));
-        for(int id: keywordsIds){
-            sb.append(id).append(", ");
-        }
-        String queryString = sb.toString();
-        ResultSet cursor = statement.executeQuery(queryString.trim().substring(0, queryString.length() - 1) + ")"); //Remove extra space and subString removes extra comma, then closes parenth
-        while(cursor.next()){
-            keywords.add(cursor.getString(cursor.findColumn(KEYWORD_TEXT_COLUMN)));
-        }
-        cursor.close();
-        statement.close();
-        return keywords;
     }
 
 
@@ -169,9 +129,30 @@ public class ShowDbHelper {
                 SHOW_TABLE,
                 show.getId(), show.getTitle(), show.getDescription(), show.getDuration(), show.getOriginalAirDate(), show.getRating()
         );
-        //ToDo: Handle Keywords
         statement.execute(executionString);
+        insertKeywords(statement, show.getKeywords(), show.getId());
     }
+
+    private void insertKeywords(Statement statement, List<String> keywords, int showId) throws SQLException {
+        for(String keyword : keywords){
+            statement.execute(String.format("INSERT INTO %s VALUES (%s, '%s')", KEYWORD_TABLE, showId, keyword));
+        }
+    }
+
+
+    private List<String> getAssociatedKeywords(int showId) throws SQLException {
+        List<String> keywordKeys = new ArrayList<>();
+        Statement statement = mConnection.createStatement();
+        String executionString = String.format(" SELECT %s FROM  %s WHERE %s = %s", KEYWORD_TEXT_COLUMN, KEYWORD_TABLE, SHOW_ID_COLUMN, showId);
+        ResultSet cursor = statement.executeQuery(executionString);
+        while(cursor.next()) {
+            keywordKeys.add(cursor.getString(cursor.findColumn(KEYWORD_TEXT_COLUMN)));
+        }
+        cursor.close();
+        statement.close();
+        return keywordKeys;
+    }
+
 
     public Collection<Show> getAllShows(){
         System.out.println("DBHelper AllShows Called");

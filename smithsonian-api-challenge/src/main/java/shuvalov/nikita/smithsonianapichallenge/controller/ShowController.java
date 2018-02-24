@@ -24,4 +24,10 @@ public class ShowController {
     }
 
 
+    @RequestMapping(method = RequestMethod.GET)
+    public void redirectToIndex(){
+        //ToDo: Redirect
+    }
+
+
 }
