@@ -34,9 +34,17 @@ public class ShowController {
                 new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    //Add
+
+    @RequestMapping(path = "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity removeShowById(@PathVariable(value = "id") int id){
+        return ShowDbHelper.getInstance().removeShowById(id) ?
+                new ResponseEntity(HttpStatus.ACCEPTED) :
+                new ResponseEntity(HttpStatus.BAD_REQUEST)
+                ;
+    }
+
+
     //Update
-    //Delete
 
 
     @RequestMapping(method = RequestMethod.GET)

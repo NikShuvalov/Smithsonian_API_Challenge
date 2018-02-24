@@ -196,4 +196,27 @@ public class ShowDbHelper {
         return true;
     }
 
+    //============================================= Deletes ================================================
+
+    public boolean removeShowById(int showId){
+        try {
+            Statement statement = mConnection.createStatement();
+            deleteShow(statement, showId);
+            deleteKeywordAssociations(statement, showId);
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private void deleteShow(Statement statement, int showId) throws SQLException{
+        String executionString = String.format("DELETE FROM %s WHERE %s = %s", SHOW_TABLE, SHOW_ID_COLUMN, showId);
+        statement.execute(executionString);
+    }
+
+    private void deleteKeywordAssociations(Statement statement, int showId) throws SQLException{
+        String executionString = String.format("DELETE FROM %s WHERE %s = %s", KEYWORD_TABLE, SHOW_ID_COLUMN, showId);
+        statement.execute(executionString);
+    }
 }
