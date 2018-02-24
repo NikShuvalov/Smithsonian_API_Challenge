@@ -153,18 +153,25 @@ public class ShowDbHelper {
         return null;
     }
 
-    private List<String> getAssociatedKeywords(int showId) throws SQLException {
+    public List<String> getAssociatedKeywords(int showId){
         List<String> keywordKeys = new ArrayList<>();
-        Statement statement = mConnection.createStatement();
-        String executionString = String.format(" SELECT %s FROM  %s WHERE %s = %s", KEYWORD_TEXT_COLUMN, KEYWORD_TABLE, SHOW_ID_COLUMN, showId);
-        ResultSet cursor = statement.executeQuery(executionString);
-        while(cursor.next()) {
-            keywordKeys.add(cursor.getString(cursor.findColumn(KEYWORD_TEXT_COLUMN)));
+        try {
+            Statement statement = mConnection.createStatement();
+            String executionString = String.format(" SELECT %s FROM  %s WHERE %s = %s", KEYWORD_TEXT_COLUMN, KEYWORD_TABLE, SHOW_ID_COLUMN, showId);
+            ResultSet cursor = statement.executeQuery(executionString);
+            while (cursor.next()) {
+                keywordKeys.add(cursor.getString(cursor.findColumn(KEYWORD_TEXT_COLUMN)));
+            }
+            cursor.close();
+            statement.close();
+            return keywordKeys;
+        }catch (SQLException e){
+            e.printStackTrace();
+            return null;
         }
-        cursor.close();
-        statement.close();
-        return keywordKeys;
     }
+
+
 
     public List<Show> getShowsByTitle(String title){
         List<Show> showsWithTitle = new ArrayList<>();

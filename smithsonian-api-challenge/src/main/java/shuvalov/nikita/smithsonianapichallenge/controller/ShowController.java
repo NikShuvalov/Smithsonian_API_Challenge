@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import shuvalov.nikita.smithsonianapichallenge.database.ShowDbHelper;
 import shuvalov.nikita.smithsonianapichallenge.entity.Show;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
@@ -15,6 +16,7 @@ import java.util.List;
 @RequestMapping("/shows")
 public class ShowController {
 
+    //===================================== Shows ===================================================================
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<?> getShowByParams(@RequestParam(value = "title", required =  false) String title,
                                                 @RequestParam(value = "keyword", required = false) String keyword){
@@ -36,13 +38,11 @@ public class ShowController {
                     new ResponseEntity<>(showsWithKeyword, HttpStatus.OK);
         }
     }
-
     @RequestMapping(path = "/", method = RequestMethod.GET)
     public Collection<Show> getIndex(){
         return ShowDbHelper.getInstance().getAllShows();
     }
 
-    //ToDo: do "?id={id} instead, maybe perhaps?
     @RequestMapping(path = "/{id}", method = RequestMethod.GET)
     public ResponseEntity<Show> getShowById(@PathVariable(value = "id") int id){
         Show show = ShowDbHelper.getInstance().getShowById(id);
@@ -51,14 +51,12 @@ public class ShowController {
                 new ResponseEntity<>(show, HttpStatus.OK);
     }
 
-
     @RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity addNewShow(@RequestBody Show show){
         return ShowDbHelper.getInstance().addShow(show) ?
                 new ResponseEntity(HttpStatus.ACCEPTED) :
                 new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
 
     @RequestMapping(path = "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity removeShowById(@PathVariable(value = "id") int id){
@@ -75,9 +73,16 @@ public class ShowController {
                 new ResponseEntity(HttpStatus.BAD_REQUEST);
     }
 
-//    @RequestMapping(method = RequestMethod.GET)
-//    public void redirectToIndex(){
-//        //ToDo: Redirect
-//    }
 
+    //======================================= Keywords ==============================================================
+
+    @RequestMapping(path = "/{id}/keywords", method = RequestMethod.GET)
+    public ResponseEntity<?> getKeywordsAssociatedWithShow(@PathVariable(value = "id") int id){
+        List<String> keywords = ShowDbHelper.getInstance().getAssociatedKeywords(id);
+        return keywords == null ?
+                new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
+                new ResponseEntity<>(keywords, HttpStatus.OK);
+    }
+
+//    @RequestMapping(path = "")
 }
