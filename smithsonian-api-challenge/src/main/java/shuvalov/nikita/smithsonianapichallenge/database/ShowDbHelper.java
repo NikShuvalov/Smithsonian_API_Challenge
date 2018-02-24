@@ -184,6 +184,25 @@ public class ShowDbHelper {
         return null;
     }
 
+    public List<Show> getShowsByKeyword(String keyword){
+        List<Show> showsWithKeyword = new ArrayList<>();
+        try{
+            Statement statement = mConnection.createStatement();
+            String queryString = String.format("SELECT %s FROM %s WHERE %s ILIKE '%s'", SHOW_ID_COLUMN, KEYWORD_TABLE, KEYWORD_TEXT_COLUMN, "%" + keyword + "%");
+            ResultSet cursor = statement.executeQuery(queryString);
+            while(cursor.next()){
+                showsWithKeyword.add(getShowById(cursor.getInt(cursor.findColumn(SHOW_ID_COLUMN))));
+            }
+            cursor.close();
+            statement.close();
+            return showsWithKeyword;
+        }catch(SQLException e){
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
 
     //====================================== Add/Post ==================================================
 

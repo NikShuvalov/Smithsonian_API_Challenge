@@ -17,9 +17,9 @@ public class ShowController {
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<?> getShowByParams(@RequestParam(value = "title", required =  false) String title,
-                                                @RequestParam(value = "keyword", required = false) String rating){
+                                                @RequestParam(value = "keyword", required = false) String keyword){
         if((title == null || title.isEmpty()) &&
-                (rating == null || rating.isEmpty())) {
+                (keyword == null || keyword.isEmpty())) {
             return new ResponseEntity(HttpStatus.NO_CONTENT);
         }
 
@@ -27,12 +27,13 @@ public class ShowController {
         if(title != null && !title.isEmpty()){
             List<Show> showsWithTitle = showDbHelper.getShowsByTitle(title);
             return showsWithTitle == null ?
-                    new ResponseEntity(HttpStatus.NO_CONTENT) :
+                    new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
                     new ResponseEntity<>(showsWithTitle, HttpStatus.OK);
         }else{
-//            List<Show> showsWithKeyword;
-            //ToDo: Find byKeyword
-            return null;
+            List<Show> showsWithKeyword = showDbHelper.getShowsByKeyword(keyword);
+            return showsWithKeyword == null ?
+                    new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
+                    new ResponseEntity<>(showsWithKeyword, HttpStatus.OK);
         }
     }
 
