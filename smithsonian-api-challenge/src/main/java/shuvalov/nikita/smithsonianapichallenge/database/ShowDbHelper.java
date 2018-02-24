@@ -32,8 +32,8 @@ public class ShowDbHelper {
             TITLE_COLUMN + " TEXT, " +
             DESCRIP_COLUMN + " TEXT, " +
             DURATION_COLUMN + " BIGINT, " +
-            RATING_COLUMN + " FLOAT, " +
-            AIRDATE_COLUMN + " BIGINT)"
+            AIRDATE_COLUMN + " BIGINT," +
+            RATING_COLUMN + " FLOAT)"
             ;
 
 

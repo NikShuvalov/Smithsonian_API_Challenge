@@ -98,12 +98,13 @@ public class Show {
         return String.format("%02d/%02d/%s", c.get(Calendar.MONTH), c.get(Calendar.DATE), c.get(Calendar.YEAR));
     }
 
+    //FixMe:
     private String getDurationStringFromMillis(long durationInMillis){
         long hour = (1000 * 60 *60);
         long hours = durationInMillis / hour;
-        long minutes = durationInMillis - (int)(hours *hour);
+        long minutes = (durationInMillis - (int)(hours *hour))/ (60 * 1000);
         return String.format("%s%s",
-                hours >0 ? hours+"hrs " : "",
+                hours > 0 ? hours+"hrs " : "",
                 minutes > 0 ? minutes+"min" : "" );
     }
 }
