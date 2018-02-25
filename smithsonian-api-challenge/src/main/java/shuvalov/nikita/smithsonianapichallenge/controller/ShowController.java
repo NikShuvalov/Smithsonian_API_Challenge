@@ -42,7 +42,7 @@ public class ShowController {
         if((title == null || title.isEmpty()) &&
                 (keyword == null || keyword.isEmpty())) {
             attachOrderingParamsToSearchBuilder(searchBuilder,sortByTitle, sortById);
-            List<Show> orderedShows = ShowDbHelper.getInstance().getShowsBySearch(searchBuilder.build());
+            List<Show> orderedShows = ShowDbHelper.getInstance().getAllShows(searchBuilder.build());
             return orderedShows == null ?
                     new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
                     new ResponseEntity<>(orderedShows, HttpStatus.OK);
@@ -93,7 +93,7 @@ public class ShowController {
     }
 
 
-    @RequestMapping(path = "/", method = RequestMethod.GET)
+    @RequestMapping(path = "/index", method = RequestMethod.GET)
     public Collection<Show> getIndex(){
         return ShowDbHelper.getInstance().getAllShows(true);
     }
@@ -107,10 +107,10 @@ public class ShowController {
     }
 
     @RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity addNewShow(@RequestBody Show show){
+    public ResponseEntity<?> addNewShow(@RequestBody Show show){
         return ShowDbHelper.getInstance().addShow(show) ?
                 new ResponseEntity(HttpStatus.ACCEPTED) :
-                new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+                new ResponseEntity<>(String.format("Show with id: %s already exists", show.getId()),HttpStatus.CONFLICT);
     }
 
     @RequestMapping(path = "/{id}", method = RequestMethod.DELETE)
