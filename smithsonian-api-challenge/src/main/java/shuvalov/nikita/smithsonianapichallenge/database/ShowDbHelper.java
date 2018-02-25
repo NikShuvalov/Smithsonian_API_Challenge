@@ -295,21 +295,24 @@ public class ShowDbHelper {
     }
 
     private List<Show> getShowsAssociatedWithKeyword(Search search){
-        List<Show> showIdList = new ArrayList<>();
+        List<Show> showList = new ArrayList<>();
+        Set<Integer> showIdList = new HashSet<>(); //FixMe: Hotfix for multiple instances of a show being returned when querying for a keyword when show has duplicate keywords.
         try{
             Statement statement = mConnection.createStatement();
             QueryBuilder queryBuilder = new QueryBuilder();
             queryBuilder.appendSelectClause(KEYWORD_TABLE, SHOW_ID_COLUMN)
                     .appendWhereApproximateLikeClause(KEYWORD_TEXT_COLUMN, "'%" + search.getSearchValue() + "%'")
                     .appendPaginationClause(search);
-
             ResultSet cursor = statement.executeQuery(queryBuilder.toString());
             while(cursor.next()){
-                showIdList.add(getShowById(cursor.getInt(cursor.findColumn(SHOW_ID_COLUMN))));
+                showIdList.add(cursor.getInt(cursor.findColumn(SHOW_ID_COLUMN)));
+            }
+            for(int id: showIdList){ //FixMe: Hotfix for multiple show instances...(See above)
+                showList.add(getShowById(id));
             }
             cursor.close();
             statement.close();
-            return showIdList;
+            return showList;
         }catch(SQLException e){
             e.printStackTrace();
             return null;
