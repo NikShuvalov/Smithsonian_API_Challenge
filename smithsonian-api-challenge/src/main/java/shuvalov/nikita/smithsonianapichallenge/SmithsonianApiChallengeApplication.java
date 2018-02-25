@@ -13,5 +13,4 @@ public class SmithsonianApiChallengeApplication {
         ShowDbHelper.instantiate();
 		SpringApplication.run(SmithsonianApiChallengeApplication.class, args);
 	}
-
 }

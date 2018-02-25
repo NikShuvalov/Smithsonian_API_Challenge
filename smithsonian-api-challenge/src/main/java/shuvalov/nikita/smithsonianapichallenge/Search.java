@@ -12,14 +12,13 @@ public class Search {
     private String mSearchValue;
     private int mResultsPerPage, mPage;
 
-    private Search(SearchParam searchParam, OrderParam orderParam, boolean ascendingOrder, String searchValue, int resultsPerPage, int page) {
+    private Search(SearchParam searchParam, OrderParam orderParam, boolean ascendingOrder, String searchValue, int page, int resultsPerPage) {
         mSearchParam = searchParam;
         mOrderParam = orderParam;
         mAscendingOrder = ascendingOrder;
         mSearchValue = searchValue;
         mResultsPerPage = resultsPerPage;
         mPage = page;
-
     }
 
     public SearchParam getSearchParam() {
@@ -144,7 +143,7 @@ public class Search {
         }
 
         public Search build(){
-            return new Search(mSearchParam, mOrderParam, mAscendingOrder, mSearchValue, mResultPerPage, mPage);
+            return new Search(mSearchParam, mOrderParam, mAscendingOrder, mSearchValue, mPage, mResultPerPage);
         }
     }
 }

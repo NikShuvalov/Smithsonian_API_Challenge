@@ -9,6 +9,7 @@ import shuvalov.nikita.smithsonianapichallenge.database.ShowDbHelper;
 import shuvalov.nikita.smithsonianapichallenge.entity.Show;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 
 @RestController
@@ -22,22 +23,26 @@ public class ShowController {
      *
      * @param title Search for shows with text in Title
      * @param keyword Search for shows with Keyword attached
-     * @param page Page of search
      * @param sortByTitle Use "asc" for ascending, "desc" for descending by title
      * @param sortById "desc" for descending by id. Defaults to ascending by nature
+     * @param page Page of search Defaults to first page
+     * @param pageQuantity results per page Defaults to 25 results per page
      * @return
      */
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<?> getShowByParams(@RequestParam(value = "title", required =  false) String title,
-                                                @RequestParam(value = "keyword", required = false) String keyword,
-                                             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                             @RequestParam(value = "keyword", required = false) String keyword,
                                              @RequestParam(value = "sort_by_title", required = false) String sortByTitle,
-                                             @RequestParam(value = "sort_by_id", required = false) String sortById){
+                                             @RequestParam(value = "sort_by_id", required = false) String sortById,
+                                             @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+                                             @RequestParam(value = "results_per_page", required = false, defaultValue = "25") int pageQuantity){
         Search.Builder searchBuilder = new Search.Builder();
+
+        attachPaginationParamsToSearchBuilder(searchBuilder, page, pageQuantity);
         if((title == null || title.isEmpty()) &&
                 (keyword == null || keyword.isEmpty())) {
             attachOrderingParamsToSearchBuilder(searchBuilder,sortByTitle, sortById);
-            List<Show> orderedShows = ShowDbHelper.getInstance().getAllShows(searchBuilder.build());
+            List<Show> orderedShows = ShowDbHelper.getInstance().getShowsBySearch(searchBuilder.build());
             return orderedShows == null ?
                     new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
                     new ResponseEntity<>(orderedShows, HttpStatus.OK);
@@ -50,6 +55,7 @@ public class ShowController {
             searchBuilder.setSearchParam(Search.SearchParam.KEYWORD).setSearchValue(keyword);
             attachOrderingParamsToSearchBuilder(searchBuilder, sortByTitle, sortById);
         }
+
         Search search = searchBuilder.build();
         List<Show> searchResultList = getResultsFromSearch(search);
 
@@ -75,6 +81,11 @@ public class ShowController {
                 searchBuilder.setAscendingOrder(true);
             }
         }
+    }
+
+    private void attachPaginationParamsToSearchBuilder(Search.Builder sb, int page, int pageQuantity){
+        sb.setPage(page);
+        sb.setResultPerPage(pageQuantity);
     }
 
     private List<Show> getResultsFromSearch(Search search){
@@ -122,12 +133,21 @@ public class ShowController {
 
     /**
      * Gets a list of all keywords associated with a show.
-     * @param id Show's id
+     * @param id
+     * @param sortDirection use "sort_direction=asc" for alphabetical order, "sort_direction=desc" for reverse Alphabetical
      * @return Keyword List and OK response if successful otherwise INTERNAL_SERVER_ERROR
      */
     @RequestMapping(path = "/{id}/keywords", method = RequestMethod.GET)
-    public ResponseEntity<?> getKeywordsAssociatedWithShow(@PathVariable(value = "id") int id){
+    public ResponseEntity<?> getKeywordsAssociatedWithShow(@PathVariable(value = "id") int id,
+                                                           @RequestParam(value = "sort_direction", required = false) String sortDirection){
         List<String> keywords = ShowDbHelper.getInstance().getAssociatedKeywords(id);
+        if(sortDirection != null){
+            if(sortDirection.toLowerCase().equals("desc")){
+                keywords.sort(Comparator.reverseOrder());
+            }else if (sortDirection.toLowerCase().equals("asc")){
+                keywords.sort(Comparator.naturalOrder());
+            }
+        }
         return keywords == null ?
                 new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR) :
                 new ResponseEntity<>(keywords, HttpStatus.OK);

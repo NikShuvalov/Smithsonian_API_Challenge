@@ -63,6 +63,9 @@ public class ShowDbHelper {
         }
     }
 
+
+    private static final String LOREM_IPSUM_FULL = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+    private static final String LOREM_ISPUM_SHORT = "Lorem ipsum dolor sit amet, consectetur adipiscing elit";
     private void seedDatabaseWithDummyData(){
         try {
             if(mConnection == null){
@@ -70,15 +73,55 @@ public class ShowDbHelper {
             }
 
             Statement statement = mConnection.createStatement();
-            List<String> genericKeywords = new ArrayList<>();
-            genericKeywords.add("Quirky");
-            genericKeywords.add("Cerebral");
-            genericKeywords.add("Funny");
-            genericKeywords.add("Provocative");
-            insertShowIntoDatabase(statement, new Show(0, "The Big Bang Theory", "Nerds do physics while some hot girl annoys them", 60000 * 30, 0, 8.3f, genericKeywords));
-            insertShowIntoDatabase(statement, new Show(1, "Aerial America", "Take a virtual tour of America as seen from an airplane", 60000 * 30, 0, 8.7f, genericKeywords));
-            insertShowIntoDatabase(statement, new Show(2, "Filler", "A description is worth a 1000 words", 60000 * 30, 0, 8.7f, genericKeywords));
-            insertShowIntoDatabase(statement, new Show(3, "Additional Filler", "Descriptive text 2: Electric boogaloo", 60000 * 30, 0, 8.7f, genericKeywords));
+            List<String> genericKeywords = new ArrayList<String>(){{
+                add("quirky");
+                add("cerebral");
+                add("funny");
+                add("provocative");
+                add("drama");
+                add("gripping");
+                add("nerdy");
+                add("crime");
+                add("thriller");
+                add("informative");
+                add("family");
+                add("inticing");
+                add("history");
+            }};
+
+            List<String> shows = new ArrayList<String>(){{
+                add("The Big Bang Theory");
+                add("Survivor");
+                add("NCIS");
+                add("Aerial America");
+                add("Elementary");
+                add("Sound Revolutin");
+                add("Terror in the skies");
+                add("Unabashed pandering");
+                add("The Real Story");
+            }};
+
+            long fakeAirDate = Calendar.getInstance().getTimeInMillis();
+            for(int i = 0; i < 100; i++){
+                List<String> randomKeywords = new ArrayList<String>(){
+                    {
+                        add(genericKeywords.get(new Random().nextInt(genericKeywords.size()-1)));
+                        add(genericKeywords.get(new Random().nextInt(genericKeywords.size()-1)));
+                        add(genericKeywords.get(new Random().nextInt(genericKeywords.size()-1)));
+                        add(genericKeywords.get(new Random().nextInt(genericKeywords.size()-1)));
+                    }
+                };
+                insertShowIntoDatabase(statement,
+                        new Show(i,
+                                i >= shows.size() ? String.format("Filler Show #%s", (i - shows.size()) + 1) : shows.get(i),
+                                LOREM_ISPUM_SHORT,
+                                60000 * 30,
+                                fakeAirDate,
+                                8.3f,
+                                randomKeywords)
+                );
+
+            }
             System.out.println("Seeded database");
             statement.close();
         } catch (SQLException e) {
@@ -204,7 +247,8 @@ public class ShowDbHelper {
             StringBuilder sb = new StringBuilder();
             appendSelectClauseToQueryBuilder(sb, SHOW_TABLE, "*");
             appendOrderByClauseToQueryBuiler(sb, search);
-//            appendPaginationClauseToQueryBuilder(sb,search);
+            appendPaginationClauseToQueryBuilder(sb,search);
+            System.out.println(sb.toString());
             ResultSet cursor = statement.executeQuery(sb.toString());
             while(cursor.next()){
                 allShows.add(getShowFromQueryResult(cursor));
@@ -239,7 +283,6 @@ public class ShowDbHelper {
     public List<String> getAssociatedKeywords(int showId){
         List<String> keywordKeys = new ArrayList<>();
         try {
-            System.out.println("Associated Keywords");
             Statement statement = mConnection.createStatement();
             StringBuilder sb = new StringBuilder();
             appendSelectClauseToQueryBuilder(sb, KEYWORD_TABLE, KEYWORD_TEXT_COLUMN);
@@ -267,9 +310,10 @@ public class ShowDbHelper {
                     appendSelectClauseToQueryBuilder(queryBuilder, SHOW_TABLE, "*");
                     appendWhereApproximateLikeClauseToQueryBuilder(queryBuilder, search.getSearchParam().getColumnName(), "'%" + search.getSearchValue() + "%'");
                     appendOrderByClauseToQueryBuiler(queryBuilder, search);
+                    appendPaginationClauseToQueryBuilder(queryBuilder, search);
                     break;
                 case KEYWORD:
-                    List<Show> showList = getShowsAssociatedWithKeyword(search.getSearchValue());
+                    List<Show> showList = getShowsAssociatedWithKeyword(search);
                     sortShowList(showList, search);
                     statement.close();
                     return showList;
@@ -303,13 +347,14 @@ public class ShowDbHelper {
         }
     }
 
-    private List<Show> getShowsAssociatedWithKeyword(String keyword){
+    private List<Show> getShowsAssociatedWithKeyword(Search search){
         List<Show> showIdList = new ArrayList<>();
         try{
             Statement statement = mConnection.createStatement();
             StringBuilder queryBuilder = new StringBuilder();
             appendSelectClauseToQueryBuilder(queryBuilder, KEYWORD_TABLE, SHOW_ID_COLUMN);
-            appendWhereApproximateLikeClauseToQueryBuilder(queryBuilder, KEYWORD_TEXT_COLUMN, "'%" + keyword + "%'");
+            appendWhereApproximateLikeClauseToQueryBuilder(queryBuilder, KEYWORD_TEXT_COLUMN, "'%" + search + "%'");
+            appendPaginationClauseToQueryBuilder(queryBuilder, search);
             ResultSet cursor = statement.executeQuery(queryBuilder.toString());
             while(cursor.next()){
                 showIdList.add(getShowById(cursor.getInt(cursor.findColumn(SHOW_ID_COLUMN))));
