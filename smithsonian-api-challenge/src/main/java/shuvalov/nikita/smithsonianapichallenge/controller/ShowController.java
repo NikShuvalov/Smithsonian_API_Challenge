@@ -99,10 +99,10 @@ public class ShowController {
     }
 
     @RequestMapping(path = "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Show> getShowById(@PathVariable(value = "id") int id){
+    public ResponseEntity<?> getShowById(@PathVariable(value = "id") int id){
         Show show = ShowDbHelper.getInstance().getShowById(id);
         return show == null ?
-                new ResponseEntity<>(HttpStatus.NOT_FOUND) :
+                new ResponseEntity<>("Show does not exist", HttpStatus.NOT_FOUND) :
                 new ResponseEntity<>(show, HttpStatus.OK);
     }
 
@@ -122,7 +122,10 @@ public class ShowController {
     }
 
     @RequestMapping(path = "/{id}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity updateShowById(@PathVariable(value ="id") int id, @RequestBody Show updatedShow){
+    public ResponseEntity<?> updateShowById(@PathVariable(value ="id") int id, @RequestBody Show updatedShow){
+        if(id != updatedShow.getId()){
+            return new ResponseEntity<>("ID in updated show JSON does not match ID in URL params",HttpStatus.BAD_REQUEST);
+        }
         return ShowDbHelper.getInstance().updateShowById(id, updatedShow) ?
                 new ResponseEntity(HttpStatus.ACCEPTED) :
                 new ResponseEntity(HttpStatus.BAD_REQUEST);
@@ -134,12 +137,12 @@ public class ShowController {
     /**
      * Gets a list of all keywords associated with a show.
      * @param id
-     * @param sortDirection use "sort_direction=asc" for alphabetical order, "sort_direction=desc" for reverse Alphabetical
-     * @return Keyword List and OK response if successful otherwise INTERNAL_SERVER_ERROR
+     * @param sortDirection use "sort=asc" for alphabetical order, "sort=desc" for reverse Alphabetical
+     * @return Keyword List and OK response if successful, otherwise INTERNAL_SERVER_ERROR
      */
     @RequestMapping(path = "/{id}/keywords", method = RequestMethod.GET)
     public ResponseEntity<?> getKeywordsAssociatedWithShow(@PathVariable(value = "id") int id,
-                                                           @RequestParam(value = "sort_direction", required = false) String sortDirection){
+                                                           @RequestParam(value = "sort", required = false) String sortDirection){
         List<String> keywords = ShowDbHelper.getInstance().getAssociatedKeywords(id);
         if(sortDirection != null){
             if(sortDirection.toLowerCase().equals("desc")){

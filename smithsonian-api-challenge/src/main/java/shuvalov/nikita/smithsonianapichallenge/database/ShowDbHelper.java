@@ -255,7 +255,7 @@ public class ShowDbHelper {
             switch(search.getSearchParam()){
                 case TITLE:
                     queryBuilder.appendSelectClause(SHOW_TABLE, "*")
-                            .appendWhereApproximateLikeClause(search.getSearchParam().getColumnName(),"'%" + search.getSearchValue() + "%'")
+                            .appendWhereInsenstiveLike(search.getSearchParam().getColumnName(),"'%" + search.getSearchValue() + "%'")
                             .appendOrderByClause(search)
                             .appendPaginationClause(search);
                     break;
@@ -301,7 +301,7 @@ public class ShowDbHelper {
             Statement statement = mConnection.createStatement();
             QueryBuilder queryBuilder = new QueryBuilder();
             queryBuilder.appendSelectClause(KEYWORD_TABLE, SHOW_ID_COLUMN)
-                    .appendWhereApproximateLikeClause(KEYWORD_TEXT_COLUMN, "'%" + search.getSearchValue() + "%'")
+                    .appendWhereInsenstiveLike(KEYWORD_TEXT_COLUMN, "'%" + search.getSearchValue() + "%'")
                     .appendPaginationClause(search);
             ResultSet cursor = statement.executeQuery(queryBuilder.toString());
             while(cursor.next()){

@@ -4,10 +4,14 @@ import shuvalov.nikita.smithsonianapichallenge.Search;
 
 import java.sql.SQLException;
 
+
+/**
+ * Convenience class for creating SQL execution strings.
+ */
 public class QueryBuilder{
     private StringBuilder mStringBuilder;
 
-    public QueryBuilder(){
+    QueryBuilder(){
         mStringBuilder = new StringBuilder();
     }
 
@@ -58,13 +62,8 @@ public class QueryBuilder{
         return this;
     }
 
-    public QueryBuilder appendWhereApproximateLikeClause( String column, String value){
+    public QueryBuilder appendWhereInsenstiveLike(String column, String value){
         mStringBuilder.append(String.format("WHERE %s ILIKE %s ", column, value));
-        return this;
-    }
-
-    public QueryBuilder appendWhereLikeClause( String column, String value){
-        mStringBuilder.append(String.format("WHERE %s LIKE %s ", column, value));
         return this;
     }
 

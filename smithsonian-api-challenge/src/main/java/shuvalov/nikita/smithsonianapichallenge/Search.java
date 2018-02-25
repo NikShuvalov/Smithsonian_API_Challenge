@@ -3,7 +3,10 @@ package shuvalov.nikita.smithsonianapichallenge;
 import shuvalov.nikita.smithsonianapichallenge.database.ShowDbHelper;
 
 
-//ToDo: Probably make this an internal class for the DBHelper
+/**
+ * Class for customizing searches. Includes a Builder class.
+ * Currently handles search params, search value, page, results per page, ordering parameters and order direction.
+ */
 public class Search {
     private SearchParam mSearchParam;
     private OrderParam mOrderParam;
