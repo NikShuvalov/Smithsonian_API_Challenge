@@ -5,12 +5,7 @@ import shuvalov.nikita.smithsonianapichallenge.Search;
 import shuvalov.nikita.smithsonianapichallenge.entity.Show;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import static shuvalov.nikita.smithsonianapichallenge.Search.SearchParam.TITLE;
+import java.util.*;
 
 public class ShowDbHelper {
 
@@ -124,6 +119,58 @@ public class ShowDbHelper {
         return show;
     }
 
+    private void appendSelectClauseToQueryBuilder(StringBuilder sb, String tableName, String... columns) throws SQLException {
+        if(columns.length == 0){
+            throw new SQLException("Column Selection params missing");
+        }
+        String columnsJoined;
+        if(columns.length == 1){
+            columnsJoined = columns[0];
+        }else{
+            columnsJoined = String.join(", ", columns);
+            columnsJoined = columnsJoined.substring(0, columnsJoined.length() -1);
+        }
+        sb.append(String.format("SELECT %s FROM %s ", columnsJoined, tableName));
+    }
+
+    private void appendDeleteClauseToQueryBuilder(StringBuilder sb, String tableName){
+        sb.append(String.format("DELETE FROM %s ", tableName));
+    }
+
+    private void appendOrderByClauseToQueryBuiler(StringBuilder sb, Search search){
+        sb.append(String.format("ORDER BY %s %s ",
+                search.getOrderParam().getColumnName(),
+                search.isAscendingOrder() ?
+                        "ASC " : "DESC "));
+    }
+
+    private void appendPaginationClauseToQueryBuilder(StringBuilder sb, Search search){
+        int resultsPerPage = search.getResultsPerPage();
+        sb.append(String.format("LIMIT %s ", resultsPerPage));
+        int offset = resultsPerPage * search.getPage();
+        if(offset > 0){
+            sb.append(String.format("OFFSET %s ", offset));
+        }
+    }
+
+
+    /**
+     * Make sure to add Quotes if value is a stored as String in db
+     */
+    private void appendWhereClauseToQueryBuilder(StringBuilder sb, String column, String value){
+        sb.append(String.format("WHERE %s = %s ", column, value));
+    }
+
+    private void appendWhereApproximateLikeClauseToQueryBuilder(StringBuilder sb, String column, String value){
+        sb.append(String.format("WHERE %s ILIKE %s ", column, value));
+    }
+
+    private void appendWhereLikeClauseToQueryBuilder(StringBuilder sb, String column, String value){
+        sb.append(String.format("WHERE %s LIKE %s ", column, value));
+    }
+
+
+
     //=========================================== Get ========================================
 
 
@@ -146,7 +193,6 @@ public class ShowDbHelper {
         return allShows;
     }
 
-
     public List<Show> getAllShows(Search search){
         System.out.println("DBHelper Index Called");
         List<Show> allShows = new ArrayList<>();
@@ -155,12 +201,11 @@ public class ShowDbHelper {
                 startConnection();
             }
             Statement statement = mConnection.createStatement();
-            ResultSet cursor = statement.executeQuery(String.format("SELECT * FROM %s %s", SHOW_TABLE,
-                    String.format("ORDER BY %s %s",
-                            search.getOrderParam().getColumnName(),
-                            search.isAscendingOrder() ?
-                                    "ASC" :
-                                    "DESC")));
+            StringBuilder sb = new StringBuilder();
+            appendSelectClauseToQueryBuilder(sb, SHOW_TABLE, "*");
+            appendOrderByClauseToQueryBuiler(sb, search);
+//            appendPaginationClauseToQueryBuilder(sb,search);
+            ResultSet cursor = statement.executeQuery(sb.toString());
             while(cursor.next()){
                 allShows.add(getShowFromQueryResult(cursor));
             }
@@ -194,9 +239,12 @@ public class ShowDbHelper {
     public List<String> getAssociatedKeywords(int showId){
         List<String> keywordKeys = new ArrayList<>();
         try {
+            System.out.println("Associated Keywords");
             Statement statement = mConnection.createStatement();
-            String executionString = String.format(" SELECT %s FROM  %s WHERE %s = %s", KEYWORD_TEXT_COLUMN, KEYWORD_TABLE, SHOW_ID_COLUMN, showId);
-            ResultSet cursor = statement.executeQuery(executionString);
+            StringBuilder sb = new StringBuilder();
+            appendSelectClauseToQueryBuilder(sb, KEYWORD_TABLE, KEYWORD_TEXT_COLUMN);
+            appendWhereClauseToQueryBuilder(sb, SHOW_ID_COLUMN, String.valueOf(showId));
+            ResultSet cursor = statement.executeQuery(sb.toString());
             while (cursor.next()) {
                 keywordKeys.add(cursor.getString(cursor.findColumn(KEYWORD_TEXT_COLUMN)));
             }
@@ -209,15 +257,16 @@ public class ShowDbHelper {
         }
     }
 
-
     public List<Show> getShowsBySearch(Search search) {
         List<Show> showResultList = new ArrayList<>();
         try {
             Statement statement = mConnection.createStatement();
-            String queryString;
+            StringBuilder queryBuilder = new StringBuilder();
             switch(search.getSearchParam()){
                 case TITLE:
-                    queryString = String.format("SELECT * FROM %s WHERE %s ILIKE '%s' ORDER BY %s %s", SHOW_TABLE, search.getSearchParam().getColumnName(), "%" + search.getSearchValue() + "%", search.getOrderParam().getColumnName(), search.isAscendingOrder() ? "ASC" : "DESC");
+                    appendSelectClauseToQueryBuilder(queryBuilder, SHOW_TABLE, "*");
+                    appendWhereApproximateLikeClauseToQueryBuilder(queryBuilder, search.getSearchParam().getColumnName(), "'%" + search.getSearchValue() + "%'");
+                    appendOrderByClauseToQueryBuiler(queryBuilder, search);
                     break;
                 case KEYWORD:
                     List<Show> showList = getShowsAssociatedWithKeyword(search.getSearchValue());
@@ -228,7 +277,7 @@ public class ShowDbHelper {
                     throw new Exception(String.format("Unhandled SearchParam ('%s') when assigning Table to search", search.getSearchParam().toString()));
 
             }
-            ResultSet cursor = statement.executeQuery(queryString);
+            ResultSet cursor = statement.executeQuery(queryBuilder.toString());
             while(cursor.next()){
                 showResultList.add(getShowFromQueryResult(cursor));
             }
@@ -258,8 +307,10 @@ public class ShowDbHelper {
         List<Show> showIdList = new ArrayList<>();
         try{
             Statement statement = mConnection.createStatement();
-            String queryString = String.format("SELECT %s FROM %s WHERE %s ILIKE '%s'", SHOW_ID_COLUMN, KEYWORD_TABLE, KEYWORD_TEXT_COLUMN, "%" + keyword + "%");
-            ResultSet cursor = statement.executeQuery(queryString);
+            StringBuilder queryBuilder = new StringBuilder();
+            appendSelectClauseToQueryBuilder(queryBuilder, KEYWORD_TABLE, SHOW_ID_COLUMN);
+            appendWhereApproximateLikeClauseToQueryBuilder(queryBuilder, KEYWORD_TEXT_COLUMN, "'%" + keyword + "%'");
+            ResultSet cursor = statement.executeQuery(queryBuilder.toString());
             while(cursor.next()){
                 showIdList.add(getShowById(cursor.getInt(cursor.findColumn(SHOW_ID_COLUMN))));
             }
@@ -333,8 +384,10 @@ public class ShowDbHelper {
     }
 
     private void deleteShow(Statement statement, int showId) throws SQLException{
-        String executionString = String.format("DELETE FROM %s WHERE %s = %s", SHOW_TABLE, SHOW_ID_COLUMN, showId);
-        statement.execute(executionString);
+        StringBuilder queryBuilder = new StringBuilder();
+        appendDeleteClauseToQueryBuilder(queryBuilder, SHOW_TABLE);
+        appendWhereClauseToQueryBuilder(queryBuilder, SHOW_ID_COLUMN, String.valueOf(showId));
+        statement.execute(queryBuilder.toString());
     }
 
     /**
@@ -346,8 +399,10 @@ public class ShowDbHelper {
      * @throws SQLException
      */
     private void deleteKeywordAssociations(Statement statement, int showId) throws SQLException{
-        String executionString = String.format("DELETE FROM %s WHERE %s = %s", KEYWORD_TABLE, SHOW_ID_COLUMN, showId);
-        statement.execute(executionString);
+        StringBuilder queryBuilder = new StringBuilder();
+        appendDeleteClauseToQueryBuilder(queryBuilder, KEYWORD_TABLE);
+        appendWhereClauseToQueryBuilder(queryBuilder, SHOW_ID_COLUMN, String.valueOf(showId));
+        statement.execute(queryBuilder.toString());
     }
 
     /**
@@ -359,10 +414,11 @@ public class ShowDbHelper {
      * @throws SQLException
      */
     private void removeKeywordAssociation(Statement statement, int showId, String keyword) throws SQLException{
-        String executionString = String.format("DELETE FROM %s WHERE %s = %s AND %s = '%s'", KEYWORD_TABLE,
-                SHOW_ID_COLUMN, showId,
-                KEYWORD_TEXT_COLUMN, keyword);
-        statement.execute(executionString);
+        StringBuilder queryBuilder = new StringBuilder();
+        appendDeleteClauseToQueryBuilder(queryBuilder, KEYWORD_TABLE);
+        appendWhereClauseToQueryBuilder(queryBuilder, SHOW_ID_COLUMN, String.valueOf(showId));
+        queryBuilder.append(String.format("AND %s = '%s'",KEYWORD_TEXT_COLUMN, keyword));
+        statement.execute(queryBuilder.toString());
     }
 
     /**
@@ -385,7 +441,6 @@ public class ShowDbHelper {
             return false;
         }
     }
-
 
     //============================================ Update ========================================================
 

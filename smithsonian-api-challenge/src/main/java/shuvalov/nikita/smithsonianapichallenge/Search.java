@@ -10,12 +10,16 @@ public class Search {
     private boolean mAscendingOrder;
 
     private String mSearchValue;
+    private int mResultsPerPage, mPage;
 
-    private Search(SearchParam searchParam, OrderParam orderParam, boolean ascendingOrder, String searchValue) {
+    private Search(SearchParam searchParam, OrderParam orderParam, boolean ascendingOrder, String searchValue, int resultsPerPage, int page) {
         mSearchParam = searchParam;
         mOrderParam = orderParam;
         mAscendingOrder = ascendingOrder;
         mSearchValue = searchValue;
+        mResultsPerPage = resultsPerPage;
+        mPage = page;
+
     }
 
     public SearchParam getSearchParam() {
@@ -48,6 +52,14 @@ public class Search {
 
     public void setSearchValue(String searchValue) {
         mSearchValue = searchValue;
+    }
+
+    public int getResultsPerPage() {
+        return mResultsPerPage;
+    }
+
+    public int getPage() {
+        return mPage;
     }
 
     public enum SearchParam{
@@ -90,10 +102,14 @@ public class Search {
         private boolean mAscendingOrder;
         private String mSearchValue;
 
+        private int mResultPerPage, mPage;
+
         //By Default order by Ascending ID since this is how it will be returned from Database normally
         public Builder() {
             mOrderParam = OrderParam.ID;
-             mAscendingOrder= true;
+            mAscendingOrder= true;
+            mResultPerPage = 25;
+            mPage = 0;
         }
 
         public Builder setSearchParam(SearchParam searchParam) {
@@ -116,8 +132,19 @@ public class Search {
             return this;
         }
 
+
+        public Builder setResultPerPage(int resultPerPage) {
+            mResultPerPage = resultPerPage;
+            return this;
+        }
+
+        public Builder setPage(int page) {
+            mPage = page;
+            return this;
+        }
+
         public Search build(){
-            return new Search(mSearchParam, mOrderParam, mAscendingOrder, mSearchValue);
+            return new Search(mSearchParam, mOrderParam, mAscendingOrder, mSearchValue, mResultPerPage, mPage);
         }
     }
 }
