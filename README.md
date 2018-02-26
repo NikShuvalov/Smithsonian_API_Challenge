@@ -20,8 +20,8 @@ The API handles querying the Show database through Titles or Keywords. Results c
 	"id": int,
 	"title": String,
 	"description": String,
-	"duration" : long,
-	"originalAirDate": long,
+	"duration" : long lengthInMillis,
+	"originalAirDate": long airDateInMillis,
 	"rating": float,
 	"keywords": String[]
 }
