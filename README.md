@@ -6,6 +6,12 @@ An API created in Java using the Spring Framework for routing and H2 Database as
 The Database is seeded with 100 shows. The first 9 of which are fixed titles, and subsequent are "Filler Show #{n}". Each show has 4 random keywords attached to them. 
 The API handles querying the Show database through Titles or Keywords. Results can be sorted in ascending or descending order by either ID or Title. Keywords for a show can be retrieved and sorted in Alphabetical or Reverse Alphabetical order as well. 
 
+[Instructions to run the Api](https://github.com/NikShuvalov/Smithsonian_API_Challenge/blob/master/INSTRUCTIONS.MD)
+
+[Link for compiled ShowsApi.jar download](https://drive.google.com/open?id=16FqH4pBgFXzfSdqeBiLkdSL52VvXNmED)
+
+
+# Documentation 
 
 ## Show JSON
 
