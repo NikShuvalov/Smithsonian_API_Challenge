@@ -61,6 +61,7 @@ Returns a specific show with the provided id in JSON format.
 #### /shows/{id}/keywords?
 
 | Url-params | Description|
+|---|---|
 | sort | Use "asc" to sort results in Alphabetical order; "desc" for reverse Alphabetical order|
 
 Returns all keywords associated with show of given id as a JSONArray of Strings.
