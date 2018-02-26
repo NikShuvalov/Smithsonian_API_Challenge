@@ -6,11 +6,11 @@ import shuvalov.nikita.smithsonianapichallenge.database.ShowDbHelper;
 
 
 @SpringBootApplication
-public class SmithsonianApiChallengeApplication {
+public class Main {
 
 
 	public static void main(String[] args) {
         ShowDbHelper.instantiate();
-		SpringApplication.run(SmithsonianApiChallengeApplication.class, args);
+		SpringApplication.run(Main.class, args);
 	}
 }
