@@ -1,6 +1,5 @@
 package shuvalov.nikita.smithsonianapichallenge.database;
 
-import com.sun.istack.internal.Nullable;
 import shuvalov.nikita.smithsonianapichallenge.Search;
 import shuvalov.nikita.smithsonianapichallenge.entity.Show;
 
@@ -333,7 +332,7 @@ public class ShowDbHelper {
 
     //FixMe: Does not handle duplicate entries
     //ToDo:Refactor with Query Builder
-    public boolean addKeywordAssociation(@Nullable Statement statement, String keyword, int showId){
+    public boolean addKeywordAssociation(Statement statement, String keyword, int showId){
         boolean rememberToClose = (statement == null);
         try {
             if (rememberToClose) statement = mConnection.createStatement();
